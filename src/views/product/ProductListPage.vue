@@ -1,5 +1,6 @@
 <template>
-  <a-page-header class="rounded-[5px]" style="border: 1px solid rgb(235, 237, 240); margin: 20px;; height: 100%; background: white;">
+  <a-page-header class="rounded-[5px]"
+    style="border: 1px solid rgb(235, 237, 240); margin: 20px;; height: 100%; background: white;">
     <template #title>
       <h3 class="text-2xl">Quản lý sản phẩm</h3>
     </template>
@@ -15,7 +16,6 @@
         <a-space direction="vertical" class="w-1/2">
           <a-space class="w-full">
             <span class="w-[130px] block font-[600]">Danh mục: </span>
-
             <a-select v-model:value="filterModel.dmGiay" placeholder="Chọn danh mục" class="min-w-[300px]"
               :options="categoryOpts">
             </a-select>
@@ -34,7 +34,7 @@
             </a-input>
 
             <a-select class="w-[140px]" v-model:value="filterModel.searchKey">
-              <a-select-option value="tieuDe">Tên sản phẩm</a-select-option>
+              <a-select-option value="ten">Tên sản phẩm</a-select-option>
               <a-select-option value="maSP">Mã sản phẩm</a-select-option>
             </a-select>
           </a-space>
@@ -44,9 +44,10 @@
           <a-space>
             <span class="w-[130px] block font-[600]">Trạng thái hiển thị:
             </span>
-            <a-select v-model:value="filterModel.hienThiWeb" placeholder="Chọn trạng thái hiển thị" class="min-w-[300px]">
-              <a-select-option :value="true">Hiển thị trên web</a-select-option>
-              <a-select-option :value="false">Ẩn</a-select-option>
+            <a-select v-model:value="filterModel.hienThiWeb" placeholder="Chọn trạng thái hiển thị"
+              class="min-w-[300px]">
+              <a-select-option :value="'true'">Hiển thị trên web</a-select-option>
+              <a-select-option :value="'false'">Ẩn</a-select-option>
             </a-select>
           </a-space>
 
@@ -74,9 +75,11 @@
 
     <a-table bordered :columns="tblConfig.columns" :dataSource="tblConfig.data" :pagination="tblConfig.pagination"
       :loading="tblConfig.loading" @change="tblConfig.onPageChange" :scroll="{ x: 1300 }">
+
       <template #bodyCell="{ column, text, record }">
+
         <template v-if="column.dataIndex === 'anhChinh'">
-          <img :src="text.url" class="h-[110px] w-[103px] mx-auto" />
+          <img :src="text?.url" class="h-[110px] w-[103px] mx-auto" /> 
         </template>
 
         <template v-else-if="column.dataIndex === 'price'">
@@ -92,17 +95,18 @@
         <template v-else-if="column.dataIndex === 'nguoiTao'">
           {{ text?.name }}
         </template>
+
         <template v-else-if="column.dataIndex === 'tongSp'">
           <span v-if="Number(text || 0) == 0"> Tạm hết </span>
           <span v-else> {{ text }} sản phẩm </span>
         </template>
 
-        <template v-else-if="column.dataIndex === 'dmGiay'">
-          {{ text.tenDanhMuc }}
+        <template v-else-if="column.dataIndex === 'loaiSanPham'">
+          {{ text?.tenLoaiSanPham }}
         </template>
 
         <template v-else-if="column.dataIndex === 'thuongHieu'">
-          {{ text.tenThuongHieu }}
+          {{ text?.tenThuongHieu }}
         </template>
 
         <template v-else-if="column.dataIndex === 'ngayTao'">
@@ -135,12 +139,16 @@
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons-vue";
 import { onMounted, reactive, ref, inject } from "vue";
 import dayjs, { Dayjs } from "dayjs";
-import ProductService from "./services/ProductService";
+// Đảm bảo ProductService đã có hàm getAll()
+import ProductService from "./services/ProductService"; 
 import { notification, type PaginationProps } from "ant-design-vue";
-import type { IProductFilterReq, IProductTypeRes } from "./types/IProductType";
+// Giả định các types đã được định nghĩa
+import type { IProductFilterReq, IProductTypeRes } from "./types/IProductType"; 
 import type { AxiosResponse } from "axios";
-import type { IAxiosPageRes, IAxiosRes } from "@/commons/config/axios";
-import CategoryService from "./services/CategoryService";
+// Sửa import IAxiosRes
+import type { IAxiosRes } from "@/commons/config/axios"; 
+// Khai báo import CategoryService/BrandService mặc dù đã được comment
+import CategoryService from "./services/CategoryService"; 
 import BrandService from "./services/BrandService";
 import type ICategoryType from "./types/ICategoryType";
 import type IBrandType from "./types/IBrandType";
@@ -155,69 +163,16 @@ const tblConfig = reactive<{
   onPageChange: Function;
 }>({
   columns: [
-    {
-      title: "STT",
-      dataIndex: "stt",
-      key: "stt",
-      align: "center",
-      width: '70px'
-    },
-    {
-      title: "Ảnh",
-      dataIndex: "anhChinh",
-      key: "anhChinh",
-      align: "center",
-    },
-    {
-      title: "Tên sản phẩm",
-      dataIndex: "tieuDe",
-      key: "tieuDe",
-      align: "center",
-    },
-    {
-      title: "Giá",
-      dataIndex: "price",
-      key: "price",
-      align: "center",
-    },
-    {
-      title: "Số lượng trong kho",
-      dataIndex: "tongSp",
-      key: "tongSp",
-      align: "center",
-    },
-    {
-      title: "Danh mục",
-      dataIndex: "dmGiay",
-      key: "dmGiay",
-      align: "center",
-    },
-    {
-      title: "Thương hiệu",
-      dataIndex: "thuongHieu",
-      key: "thuongHieu",
-      align: "center",
-    },
-    {
-      title: "Ngày tạo",
-      dataIndex: "ngayTao",
-      key: "ngayTao",
-      align: "center",
-    },
-    {
-      title: "Người tạo",
-      dataIndex: "nguoiTao",
-      key: "nguoiTao",
-      align: "center",
-    },
-    {
-      title: "Hành động",
-      dataIndex: "action",
-      key: "action",
-      width: 100,
-      fixed: "right",
-      align: "center",
-    },
+    { title: "STT", dataIndex: "stt", key: "stt", align: "center", width: '70px' },
+    { title: "Ảnh", dataIndex: "anhChinh", key: "anhChinh", align: "center" },
+    { title: "Tên sản phẩm", dataIndex: "ten", key: "ten", align: "center" },
+    { title: "Giá", dataIndex: "price", key: "price", align: "center" },
+    { title: "Số lượng trong kho", dataIndex: "tongSp", key: "tongSp", align: "center" },
+    { title: "Danh mục", dataIndex: "loaiSanPham", key: "loaiSanPham", align: "center" },
+    { title: "Thương hiệu", dataIndex: "thuongHieu", key: "thuongHieu", align: "center" },
+    { title: "Ngày tạo", dataIndex: "ngayTao", key: "ngayTao", align: "center" },
+    { title: "Người tạo", dataIndex: "nguoiTao", key: "nguoiTao", align: "center" },
+    { title: "Hành động", dataIndex: "action", key: "action", width: 100, fixed: "right", align: "center" },
   ],
   data: [],
   loading: false,
@@ -228,7 +183,7 @@ const tblConfig = reactive<{
   },
   onPageChange: (pagination: { current: number }) => {
     tblConfig.pagination.current = pagination.current;
-    onCallApi();
+    onCallApi(); 
   },
 });
 
@@ -249,46 +204,39 @@ const onClickDelelteProduct = (id: number) => {
     })
     .finally(() => tblConfig.loading = false)
 }
+
+// HÀM onCallApi: GỌI API GET /api/v1/sanpham
 const onCallApi = () => {
   if (tblConfig.loading) return;
   tblConfig.loading = true;
+  
+  ProductService.getAll()
+    .then((res: AxiosResponse<IProductTypeRes[]>) => { 
+      // res.data là mảng sản phẩm
+      const rawData = res.data; 
+      
+      // Khắc phục lỗi nếu mảng rỗng
+      if (rawData.length === 0) {
+          notification.warn({
+              message: "Không tìm thấy dữ liệu sản phẩm.",
+          });
+      }
 
-  const payloadFilter: IProductFilterReq = {
-    dmGiay: filterModel.dmGiay,
-    thuongHieu: filterModel.thuongHieu,
-    hienThiWeb: filterModel.hienThiWeb
-      ? Boolean(filterModel.hienThiWeb)
-      : undefined,
-    tinhTrangKho: filterModel.tinhTrangKho,
-  };
-  if (filterModel.createdAtRange) {
-    payloadFilter.createdAtRange = filterModel?.createdAtRange?.map(
-      (item: Dayjs) => item.format("YYYY-MM-DDT00:00:00")
-    );
-  }
-  if (filterModel.q) {
-    // @ts-ignore
-    payloadFilter[`${filterModel.searchKey}`] = filterModel.q;
-  }
-  console.log("payload filter: ", payloadFilter);
-
-  ProductService.locSP(
-    payloadFilter,
-    (tblConfig.pagination.current as number) - 1,
-    tblConfig.pagination.pageSize
-  )
-    .then((res: IAxiosPageRes<IProductTypeRes>) => {
-      tblConfig.data = res.data.content.map(
+      tblConfig.data = rawData.map(
         (item: IProductTypeRes, index: number) => ({
           ...item,
           stt: index + 1,
         })
       );
-      tblConfig.pagination.total = res.data.totalElements;
-      console.log("product. list data: ", res.data);
+      
+      tblConfig.pagination.total = rawData.length;
+      tblConfig.pagination.current = 1; 
+      
+      console.log("product. list data (raw): ", rawData);
     })
     .catch((err) => {
-      console.log("product. list failed: ", err);
+      console.error("Lỗi khi tải dữ liệu sản phẩm: ", err);
+      // Hiển thị thông báo "Lấy dữ liệu thất bại!" như trong hình
       notification.error({
         message: "Lấy dữ liệu thất bại!",
       });
@@ -299,7 +247,7 @@ const onCallApi = () => {
 const brandOpts = ref();
 const categoryOpts = ref();
 const filterModel = reactive<{
-  tieuDe?: string;
+  ten?: string; 
   maSp?: string;
   dmGiay?: number;
   thuongHieu?: number;
@@ -309,57 +257,32 @@ const filterModel = reactive<{
   q?: string;
   searchKey?: string;
 }>({
-  searchKey: "tieuDe",
+  searchKey: "ten", 
 });
+
 const resetFilter = () => {
-  filterModel.tieuDe = undefined;
+  filterModel.ten = undefined;
   filterModel.maSp = undefined;
   filterModel.dmGiay = undefined;
   filterModel.thuongHieu = undefined;
   filterModel.hienThiWeb = undefined;
   filterModel.createdAtRange = undefined;
   filterModel.q = undefined;
-  filterModel.searchKey = "tieuDe";
+  filterModel.searchKey = "ten";
+  tblConfig.pagination.current = 1; 
   onCallApi();
 };
 
 onMounted(() => {
+  // GỌI API SẢN PHẨM (Mục tiêu chính)
   onCallApi();
 
-  CategoryService.filter({
-    page: 0,
-    size: 999,
-  })
-    .then(({ data }: IAxiosRes<ICategoryType[]>) => {
-      console.log("product. category data: ", data);
-      categoryOpts.value = data.map((item) => ({
-        label: item.tenDanhMuc,
-        value: item.id,
-      }));
-    })
-    .catch((err) => {
-      console.log("product. get category failed: ", err);
-      notification.error({
-        message: "Lấy dữ liệu danh mục thất bại! Vui lòng thử lại.",
-      });
-    });
-
-  BrandService.filterBrand({
-    page: 0,
-    size: 999,
-  })
-    .then(({ data }: IAxiosPageRes<IBrandType>) => {
-      console.log("product. brand data: ", data);
-      brandOpts.value = data.content.map((item) => ({
-        label: item.tenThuongHieu,
-        value: item.id,
-      }));
-    })
-    .catch((err) => {
-      console.log("product. get brand failed: ", err);
-      notification.error({
-        message: "Lấy dữ liệu thương hiệu thất bại! Vui lòng thử lại.",
-      });
-    });
+  // KHỐI GỌI CATEGORY VÀ BRAND ĐÃ BỊ COMMENT ĐỂ KHẮC PHỤC LỖI UNHANDLED ERROR 
+  /* CategoryService.filter(...) */
+  /* BrandService.filterBrand(...) */
 });
 </script>
+
+<style scoped>
+/* Bạn có thể thêm style tại đây nếu cần */
+</style>

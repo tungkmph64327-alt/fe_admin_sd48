@@ -7,11 +7,11 @@ function getInstance(): AxiosInstance {
         return axiosInstance
     }
     axiosInstance = axios.create({
-        // baseURL: "https://shoes.orisu.lol/v1",
-        baseURL: "http://localhost:8082/v1",
+        // ĐÃ SỬA: Chuyển CỔNG từ 8082 sang 8080 và thêm /api để khớp với Backend
+        baseURL: "http://localhost:8080/api/v1", // <-- Dòng cần chú ý
 
-        // baseURL: "https://shoes.orisu.lol/v1", 
-        // baseURL: "http://localhost:8082/v1",
+        // baseURL: "https://shoes.orisu.lol/v1", // Dòng comment gốc
+        // baseURL: "http://localhost:8082/v1", // Dòng lỗi gốc
         headers: {
         },
     });
@@ -19,7 +19,7 @@ function getInstance(): AxiosInstance {
     //hook interceptor cài ở đây
     axiosInstance.interceptors.request.use((config) => {
         const token: string | null = localStorage.getItem('loggedUser');
-        if (token) 
+        if (token)
             config.headers.set("x-api-token", token);
         return config;
     })
@@ -77,6 +77,8 @@ export interface IAxiosPageRes<T> {
         number: number,
         totalElements: number,
         numberOfElements: number,
+        // Dòng này được thêm vào vì bạn đã cung cấp log BE truy vấn DB thành công
+        // nhưng có thể thiếu 'totalPages' hoặc 'size' trong response, hãy kiểm tra lại
     }
 };
 

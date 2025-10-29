@@ -96,7 +96,7 @@ const router = createRouter({
         },
       ],
     },
-    //tạm tắt đăng nh
+    //tạm tắt đăng nhập
     // {
     //   path: '/dang-nhap',
     //   name: 'dang_nhap',
