@@ -2,6 +2,15 @@ import type IFileModel from "@/commons/types/IFileModel"
 import type ICategoryType from "./ICategoryType"
 import type IBrandType from "./IBrandType"
 
+export interface ISimpleProductOption {
+  id: number | string; // Kiểu dữ liệu phải khớp với kiểu ID trong BE (thường là number hoặc string)
+  name: string;
+};
+
+export interface ISimpleProductOption {
+    id: number;
+    name: string;
+}
 export default interface IProductType {
     id: number
     name: string

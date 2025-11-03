@@ -1,3 +1,4 @@
+/*
 <template>
   <a-form
     class="max-w-[80%] mx-auto mt-10 p-10 rounded"
@@ -621,3 +622,4 @@ onMounted(() => {
   } else onChangeProductVariantType();
 });
 </script>
+*/
