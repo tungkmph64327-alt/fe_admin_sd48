@@ -5,11 +5,11 @@
       v-model:current="currentStep"
       type="navigation"
       :items="[
-        {
-          title: 'Điền thông tin giày',
-          disabled: true,
-        },
-        { title: 'Phân loại giày', disabled: true },
+        // {
+        //   title: 'Điền thông tin giày',
+        //   disabled: true,
+        // },
+        // { title: 'Phân loại giày', disabled: true },
       ]"
     ></a-steps>
 
@@ -29,9 +29,9 @@
         >Quay lại</a-button
       >
 
-      <a-button type="primary" @click="redirectStep(1)">
+      <!-- <a-button type="primary" @click="redirectStep(1)">
         {{ currentStep == 0 ? "Bước tiếp theo" : "Hoàn tất" }}
-      </a-button>
+      </a-button> -->
     </div>
   </div>
 </template>

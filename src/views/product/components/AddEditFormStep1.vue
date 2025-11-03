@@ -1,297 +1,372 @@
 <template>
-  <a-form
-    ref="formRef"
-    class="max-w-[80%] mx-auto mt-10 p-10 rounded"
-    style="border: 1px solid rgb(234, 228, 228)"
-    :model="formState"
-    :wrapper-col="{ span: 16 }"
-    :label-col="{ span: 5 }"
-    autocomplete="off"
-    @finish="onFinish"
-    @finishFailed="onFinishFailed"
-  >
-    <a-form-item
-      label="Tên sản phẩm"
-      name="name"
-      :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
+  <div class="p-4 sm:p-6 md:p-8">
+    <a-form
+      ref="formRef"
+      :model="formState"
+      :label-col="{ span: 24 }"
+      :wrapper-col="{ span: 24 }"
+      layout="vertical"
+      autocomplete="off"
+      @finish="onFinish"
+      @finishFailed="onFinishFailed"
     >
-      <a-input
-        v-model:value="formState.name"
-        @change="
-          formState.name = _removeSpecialChars(
-            formState.name.replace(/^\s+/, '')
-          )
-        "
-        :maxlength="255"
-      />
-    </a-form-item>
 
-    <a-form-item
-      label="Mã sản phẩm"
-      name="productNumber"
-      :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
-    >
-      <a-input
-        v-model:value.trim="formState.productNumber"
-        @change="(e: any) => formState.productNumber =  e.target.value.replace(/[^a-zA-Z0-9@]/g, '').toUpperCase()"
-        :maxlength="15"
-      />
-    </a-form-item>
+      <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <a-row :gutter="32">
+          
+          <a-col :span="8">
+            <div 
+              class="bg-gray-100 p-8 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden"
+              style="min-height: 250px; border: 1px solid #e0e0e0;"
+              @click="onChooseMainImage"
+            >
+              <div v-if="productImages.mainImage" class="absolute inset-0 w-full h-full">
+                <img :src="productImages.mainImage.url" class="w-full h-full object-cover" alt="Main Product Image"/>
+                <delete-outlined
+                  @click.stop="removeMainImg"
+                  class="absolute top-2 right-2 cursor-pointer text-red-500 bg-white/75 rounded-full p-1 text-base hover:scale-110 transition-transform"
+                />
+              </div>
+              
+              <div v-else class="text-gray-400 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-2-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="mt-4 font-semibold text-gray-700">Thêm hình ảnh sản phẩm</p>
+                <p class="text-sm text-gray-500">phải là 1080x1080 px</p>
+              </div>
+            </div>
+          </a-col>
 
-    <a-form-item
-      label="Danh mục"
-      name="category"
-      :rules="[{ required: true, message: 'Vui lòng chọn danh mục!' }]"
-    >
-      <a-select
-        v-model:value="formState.category"
-        placeholder="Chọn danh mục"
-        show-search
-        :options="categoryOptions"
-        :filter-option="filterOption"
-      >
-        <a-select-option
-          :key="item.value"
-          :value="item.value"
-          v-for="item in categoryOptions"
-        >
-          {{ item.label }}
-        </a-select-option>
-      </a-select>
-    </a-form-item>
+          <a-col :span="16">
 
-    <a-form-item
-      label="Thương hiệu"
-      name="brand"
-      :rules="[{ required: true, message: 'Vui lòng chọn thương hiệu!' }]"
-    >
-      <a-select
-        v-model:value="formState.brand"
-        placeholder="Chọn thương hiệu"
-        show-search
-        :options="brandOptions"
-        :filter-option="filterOption"
-      >
-      </a-select>
-    </a-form-item>
+<a-form-item
+    label="Sản phẩm"
+    name="productId" 
+    :rules="[{ required: true, message: 'Vui lòng chọn sản phẩm!' }]"
+    class="!mb-4"
+>
+    <a-row :gutter="8"> 
+        <a-col :span="22">
+            <a-select
+                v-model:value="formState.productId" 
+                show-search
+                placeholder="Tìm kiếm và chọn sản phẩm"
+                :filter-option="false" 
+                :not-found-content="fetching ? 'Đang tải...' : 'Không tìm thấy sản phẩm'" 
+                style="width: 100%" 
+                @search="handleSearch"
+                @change="handleProductSelect"
+            >
+                <a-select-option 
+                    v-for="product in productOptions" 
+                    :key="product.id" 
+                    :value="product.id"
+                >
+                    {{ product.name }}
+                </a-select-option>
+            </a-select>
+        </a-col>
+        
+        <a-col :span="2">
+            <a-button 
+                shape="square" 
+                class="variant-add-btn" 
+                @click="onAddProduct"
+            >
+                <plus-outlined />
+            </a-button>
+        </a-col>
+    </a-row>
+</a-form-item>
 
-    <a-form-item label="Trạng thái hiển thị" name="isWebDisplay">
-      <a-select
-        placeholder="Chọn trạng thái"
-        show-search
-        v-model:value="formState.isWebDisplay"
-      >
-        <a-select-option :value="true">Hiển thị trên web</a-select-option>
-        <a-select-option :value="false">Ẩn đi</a-select-option>
-      </a-select>
-    </a-form-item>
-
-    <a-form-item
-      label="Giá hiện tại"
-      name="newPrice"
-      :rules="[{ required: true, validator: newPriceValidator }]"
-    >
-      <a-input-number
-        v-model:value="formState.newPrice"
-        :max="100000000"
-        class="w-full"
-      >
-        <template #addonAfter> vnd </template>
-      </a-input-number>
-    </a-form-item>
-
-    <a-form-item v-if="formState.id != 0" label="Giá cũ" name="oldPrice">
-      <a-input-number
-        @change="onChangeOldPrice"
-        v-model:value="formState.oldPrice"
-        :max="100000000"
-        class="w-full"
-      >
-        <template #addonAfter> vnd </template>
-      </a-input-number>
-    </a-form-item>
-
-    <a-form-item
-      label="Ảnh chính"
-      name="mainImage"
-      :rules="[{ required: true, message: 'Vui lòng chọn ảnh!' }]"
-    >
-      <div
-        v-if="!productImages.mainImage"
-        @click="onChooseMainImage"
-        class="w-[103px] h-[110px] flex justify-center items-center hover:scale-[1.05] ease-in-out duration-150 cursor-pointer"
-        style="border: 1px solid #d9d9d9"
-      >
-        <plus-outlined class="text-[20px]" />
+            <a-form-item
+              label="Mô tả"
+              name="desc"
+              :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
+              class="!mb-4"
+            >
+              <a-textarea 
+                v-model:value="formState.desc" 
+                :rows="6" 
+                placeholder="..."
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
       </div>
+      
+      <!-- <a-divider style="margin-top: 0; margin-bottom: 24px;">
+        <span class="text-lg font-bold"></span>
+      </a-divider> -->
 
-      <div
-        v-else
-        class="w-[103px] h-[110px] ease-in-out duration-150 relative"
-        style="border: 1px solid #d9d9d9"
-      >
-        <delete-outlined
-          @click="removeMainImg"
-          class="right-0 top-0 absolute cursor-pointer hover:scale-[1.05] text-red-500 bg-white p-[3px]"
+<div class="bg-white p-6 rounded-lg shadow-md mb-8">
+  <a-row :gutter="32">
+    <a-col :span="12">
+      <a-form-item label="Thương hiệu" name="brand" class="!mb-4" :rules="[{ required: true, message: 'Vui lòng chọn!' }]">
+        <a-row :gutter="8">
+          <a-col :span="22">
+           <a-select
+    v-model:value="formState.brand"
+    placeholder="Tìm kiếm tên thương hiệu"
+    show-search
+    :options="brandOptions"
+    class="custom-select-with-button"
+    :loading="fetchingBrand" :not-found-content="fetchingBrand ? 'Đang tải...' : 'Không tìm thấy thương hiệu'" :filter-option="false" @search="(val) => handleOptionSearch('brand', val)" @dropdownVisibleChange="(open) => { if(open && brandOptions.length === 0) handleOptionSearch('brand', '', 0) }"
+/>
+          </a-col>
+          <a-col :span="2">
+            <a-button 
+              shape="square" 
+              class="variant-add-btn" 
+              @click="onAddBrand"
+            >
+              <plus-outlined />
+            </a-button>
+          </a-col>
+        </a-row>
+      </a-form-item>
+    </a-col>
+    <a-col :span="12">
+      <a-form-item label="loại" name="category" class="!mb-4" :rules="[{ required: true, message: 'Vui lòng chọn!' }]">
+        <a-row :gutter="8">
+          <a-col :span="22">
+           <a-select
+    v-model:value="formState.category"
+    placeholder="Tìm kiếm loại"
+    show-search
+    :options="categoryOptions"
+    class="custom-select-with-button"
+    :loading="fetchingCategory" :not-found-content="fetchingCategory ? 'Đang tải...' : 'Không tìm thấy loại sản phẩm'" :filter-option="false" @search="(val) => handleOptionSearch('category', val)" @dropdownVisibleChange="(open) => { if(open && categoryOptions.length === 0) handleOptionSearch('category', '', 0) }"
+/>
+          </a-col>
+          <a-col :span="2">
+            <a-button 
+              shape="square" 
+              class="variant-add-btn" 
+              @click="onAddCategory"
+            >
+              <plus-outlined />
+            </a-button>
+          </a-col>
+        </a-row>
+      </a-form-item>
+    </a-col>
+
+    <a-col :span="12">
+  <a-form-item label="Chất liệu" name="chatLieu" class="!mb-4">
+    <a-row :gutter="8">
+      <a-col :span="22">
+        <a-select
+          v-model:value="formState.chatLieu"
+          placeholder="Tìm kiếm chất liệu"
+          show-search
+          :options="materialOptions"
+          class="custom-select-with-button"
+          :loading="fetchingMaterial"
+          :not-found-content="fetchingMaterial ? 'Đang tải...' : 'Không tìm thấy chất liệu'"
+          :filter-option="false"
+          @search="(val) => handleOptionSearch('material', val)"
+          @dropdownVisibleChange="(open) => { 
+            if (open && materialOptions.length === 0) 
+              handleOptionSearch('material', '', 0) 
+          }"
         />
-        <img class="w-full h-full" :src="productImages.mainImage.url" />
-      </div>
-    </a-form-item>
-
-    <a-form-item
-      label="Ảnh phụ(tối đa 6 ảnh)"
-      name="bgImages"
-      :rules="[{ required: true, message: 'Vui lòng chọn ảnh!' }]"
-    >
-      <div class="flex flex-wrap gap-[10px]">
-        <div
-          v-key="index"
-          v-for="(file, index) in productImages.bgImages"
-          class="w-[103px] h-[110px] ease-in-out duration-150 relative"
-          style="border: 1px solid #d9d9d9"
+      </a-col>
+      <a-col :span="2">
+        <a-button 
+          shape="square" 
+          class="variant-add-btn" 
+          @click="onAddChatLieu"
         >
-          <delete-outlined
-            @click="removeBgImg(file.id)"
-            class="right-0 top-0 absolute cursor-pointer hover:scale-[1.05] text-red-500 bg-white p-[3px]"
-          />
-          <img class="w-full h-full" :src="file.url" />
-        </div>
+          <plus-outlined />
+        </a-button>
+      </a-col>
+    </a-row>
+  </a-form-item>
+</a-col>
 
-        <div
-          v-if="productImages.bgImages.length < 6"
-          @click="onChooseBgImage"
-          class="w-[103px] h-[110px] flex justify-center items-center hover:scale-[1.05] ease-in-out duration-150 cursor-pointer"
-          style="border: 1px solid #d9d9d9"
-        >
-          <plus-outlined class="text-[20px]" />
-        </div>
+    <a-col :span="12">
+      <a-form-item label="Nhãn hiệu" name="productNumber" class="!mb-4" :rules="[{ required: true, message: 'Vui lòng nhập!' }]">
+        <a-row :gutter="8">
+          <a-col :span="22">
+            <a-input
+              v-model:value="formState.productNumber"
+              placeholder="Tìm kiếm theo tên thương hiệu"
+              class="custom-input-with-button"
+            />
+          </a-col>
+          <a-col :span="2">
+            <a-button 
+              shape="square" 
+              class="variant-add-btn" 
+              @click="onAddProductNumber"
+            >
+              <plus-outlined />
+            </a-button>
+          </a-col>
+        </a-row>
+      </a-form-item>
+    </a-col>
+
+    <a-col :span="12">
+      <a-form-item label="Đế" name="noiSanXuat" class="!mb-4" :rules="[{ required: true, message: 'Vui lòng nhập!' }]">
+        <a-row :gutter="8">
+          <a-col :span="22">
+            <a-input
+              v-model:value="formState.noiSanXuat"
+              placeholder="Tìm kiếm theo tên đế giày"
+              class="custom-input-with-button"
+            />
+          </a-col>
+          <a-col :span="2">
+            <a-button 
+              shape="square" 
+              class="variant-add-btn" 
+              @click="onAddNoiSanXuat"
+            >
+              <plus-outlined />
+            </a-button>
+          </a-col>
+        </a-row>
+      </a-form-item>
+    </a-col>
+    <a-col :span="12">
+      </a-col>
+  </a-row>
+</div>
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <a-row :gutter="16" class="items-start mb-4">
+          <a-col :span="4">
+            <span class="font-semibold text-base block pt-1">Màu sắc</span>
+          </a-col>
+          
+          <a-col :span="20" class="flex flex-wrap items-center gap-2">
+            <a-button 
+              shape="square" 
+              class="variant-add-btn" 
+              @click="onAddColor"
+            >
+              <plus-outlined />
+            </a-button>
+            </a-col>
+        </a-row>
+
+        <a-row :gutter="16" class="items-start mb-6">
+          <a-col :span="4">
+            <span class="font-semibold text-base block pt-1">Kích cỡ</span>
+          </a-col>
+          
+          <a-col :span="20" class="flex flex-wrap items-center gap-2">
+            <a-button 
+              shape="square" 
+              class="variant-add-btn" 
+              @click="onAddSize"
+            >
+              <plus-outlined />
+            </a-button>
+            </a-col>
+        </a-row>
+
       </div>
-    </a-form-item>
+      <!-- <a-divider style="margin-top: 0; margin-bottom: 24px;">
+        <span class="text-lg font-bold"></span>
+      </a-divider> -->
 
-    <a-form-item label="Giới tính của giày">
-      <a-radio-group v-model:value="formState.sex">
-        <a-radio value="MALE">Giày cho nam</a-radio>
-        <a-radio value="FEMALE">Giày cho nữ</a-radio>
-      </a-radio-group>
-    </a-form-item>
+      <div class="bg-white p-6 rounded-lg shadow-md">
+             <div class="text-right">
+            <a-button type="primary"  @click="onConfirmVariants">
+              <template><check-outlined /></template>
+              thêm 
+            </a-button>
+          </div>
+      
+        <a-table 
+          :columns="variantColumns" 
+          :data-source="variantData" 
+          :pagination="false" 
+          class="mt-4 variant-table"
+          :row-key="(record: any) => record.key"
+        >
+          <template #headerCell="{ column }">
+            <div class="font-bold text-black text-center py-2" >
+              {{ column.title }}
+            </div>
+          </template>
 
-    <a-form-item
-      label="Chất liệu"
-      name="chatLieu"
-      :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
-    >
-      <a-input
-        v-model:value="formState.chatLieu"
-        @change="
-          formState.chatLieu = _removeSpecialChars(
-            formState.chatLieu.replace(/^\s+/, '')
-          )
-        "
-        :maxlength="255"
-      ></a-input>
-    </a-form-item>
+          <template #bodyCell="{ column, record, index }">
+            <template v-if="column.key === 'stt'">
+              {{ index + 1 }}
+            </template>
+            <template v-else-if="column.key === 'soLuong'">
+              <a-input-number v-model:value="record.soLuong" :min="0" class="w-full" />
+            </template>
+            <template v-else-if="column.key === 'gia'">
+              <a-input-number v-model:value="record.gia" :min="0" class="w-full" />
+            </template>
+            <template v-else-if="column.key === 'hinhAnh'">
+              <a-upload
+                :show-upload-list="false"
+                class="variant-upload"
+                name="file"
+              >
+                <div v-if="!record.imageUrl" class="flex flex-col items-center justify-center p-2 border border-dashed hover:border-blue-500 cursor-pointer w-20 h-20">
+                  <plus-outlined />
+                  <div class="text-xs">Upload</div>
+                </div>
+                <img v-else :src="record.imageUrl" class="w-20 h-20 object-cover" />
+              </a-upload>
+            </template>
+            <template v-else-if="column.key === 'operation'">
+              <a-button type="text" danger><delete-outlined class="text-lg" /></a-button>
+            </template>
+          </template>
+        </a-table>
+        
+      </div>
 
-    <a-form-item
-      label="Trọng lượng"
-      name="trongLuong"
-      :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
-    >
-      <a-input
-        type="number"
-        v-model:value="formState.trongLuong"
-        :minLength="3"
-        :maxlength="4"
-        class="w-full"
-      >
-        <template #suffix> Gam </template>
-      </a-input>
-    </a-form-item>
-    <a-form-item label="Công nghệ" name="congNghe">
-      <a-input
-        v-model:value="formState.congNghe"
-        @change="
-          formState.congNghe = _removeSpecialChars(
-            formState.congNghe.replace(/^\s+/, '')
-          )
-        "
-        :maxlength="255"
-      ></a-input>
-    </a-form-item>
-
-    <a-form-item
-      label="Tính năng nổi bật"
-      name="tinhNang"
-      :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
-    >
-      <a-input
-        v-model:value="formState.tinhNang"
-        @change="
-          formState.tinhNang = _removeSpecialChars(
-            formState.tinhNang.replace(/^\s+/, '')
-          )
-        "
-        :maxlength="255"
-      ></a-input>
-    </a-form-item>
-
-    <a-form-item
-      label="Nơi sản xuất"
-      name="noiSanXuat"
-      :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
-    >
-      <a-input
-        v-model:value="formState.noiSanXuat"
-        @change="
-          formState.noiSanXuat = _removeSpecialChars(
-            formState.noiSanXuat.replace(/^\s+/, '')
-          )
-        "
-        :maxlength="255"
-      ></a-input>
-    </a-form-item>
-
-    <a-form-item
-      label="Mô tả"
-      name="desc"
-      :rules="[{ required: true, message: 'Vui lòng không bỏ trống!' }]"
-    >
-      <a-textarea
-        v-model:value="formState.desc"
-        @change="
-          formState.desc = _removeSpecialChars(
-            formState.desc.replace(/^\s+/, '')
-          )
-        "
-        :maxlength="255"
-      ></a-textarea>
-    </a-form-item>
-
-    <div class="flex justify-center gap-[15px]">
-      <a-button type="primary" html-type="button" @click="resetFormStep1"
-        >Làm mới</a-button
-      >
-      <a-button type="primary" html-type="submit">Lưu</a-button>
+    </a-form>
+    
+    <!-- <div class="flex justify-center gap-[15px] mt-8">
+      <a-button type="primary" html-type="button" @click="resetFormStep1">Làm mới</a-button>
+      <a-button type="primary" html-type="submit" @click="formRef.submit()">Lưu</a-button>
     </div>
-  </a-form>
+     -->
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons-vue";
+import {
+    PlusOutlined,
+    DeleteOutlined,
+    CloseOutlined,
+    CheckOutlined,
+} from "@ant-design/icons-vue";
 import { onMounted, reactive, ref, inject } from "vue";
 import type IFileModel from "@/commons/types/IFileModel";
 import fileService from "@/commons/services/FileService";
-import CategoryService from "@/views/product/services/CategoryService";
-import BrandService from "@/views/product/services/BrandService";
 import { notification } from "ant-design-vue";
 import type IProductType from "../types/IProductType";
-import type { FormExpose, FormInstance } from "ant-design-vue/es/form/Form";
-import type { IAxiosPageRes, IAxiosRes } from "@/commons/config/axios";
-import type ICategoryType from "../types/ICategoryType";
-import type IBrandType from "../types/IBrandType";
-import type { IProductTypeReq, IProductTypeRes } from "../types/IProductType";
+import type { FormInstance } from "ant-design-vue/es/form/Form";
+
+// [CẬP NHẬT IMPORTS] - Sử dụng các Service đã sửa
+import CategoryService from "@/views/product/services/CategoryService";
+import BrandService from "@/views/product/services/BrandService";
+import MaterialService from "@/views/product/services/MaterialService"; // <--- THÊM MỚI
+import { 
+    IProductTypeReq, 
+    IProductTypeRes,
+    ISimpleProductOption // TYPE CHO COMBOBOX SẢN PHẨM
+} from "../types/IProductType";
 import ProductService from "../services/ProductService";
 import { useRoute } from "vue-router";
 import type { AxiosResponse } from "axios";
+
+// [THÊM TYPE MỚI] - Type cho Select Options (value: number, label: string)
+interface ISelectOption {
+    value: number;
+    label: string;
+}
 
 const _removeSpecialChars = inject("removeSpecialChars", (val: string) => val);
 
@@ -299,291 +374,473 @@ const route = useRoute();
 const emits = defineEmits(["updateProduct", "redirectStep"]);
 
 const { productOrigin } = defineProps<{
-  productOrigin: IProductType | undefined;
+    productOrigin: IProductType | undefined;
 }>();
 const formRef = ref<FormInstance>();
 
-const formState = reactive<IProductType>({
-  id: 0,
-  name: "",
-  productNumber: "",
-  isWebDisplay: true,
-  sex: "MALE",
-  newPrice: 10000,
-  oldPrice: 0,
-  desc: "",
-  category: undefined,
-  brand: undefined,
-  mainImage: undefined,
-  bgImages: undefined,
-  chatLieu: "",
-  trongLuong: "",
-  congNghe: "",
-  tinhNang: "",
-  noiSanXuat: "",
+// --- KHAI BÁO FORMSTATE (ĐÃ SỬA CHAT LIEU) ---
+const formState = reactive<IProductType & { productId?: number, chatLieuId?: number }>({
+    id: 0,
+    name: "",
+    productId: undefined, 
+    
+    productNumber: "", // Nhãn hiệu
+    isWebDisplay: true,
+    sex: "MALE",
+    newPrice: 10000,
+    oldPrice: 0,
+    desc: "",
+    category: undefined, // loại (ID)
+    brand: undefined, // Thương hiệu (ID)
+    mainImage: undefined,
+    bgImages: undefined,
+    
+    // [ĐÃ SỬA] Giữ chatLieu là string cho payload API cũ (nếu cần), 
+    // và thêm chatLieuId để binding với Select Box
+    chatLieu: null, 
+    chatLieuId: undefined, // <--- THÊM MỚI: Dùng để binding với a-select
+    
+    trongLuong: "",
+    congNghe: "",
+    tinhNang: "",
+    noiSanXuat: "", // Đế
 });
 
-// custom validate
+// --- STATE CHO COMBOBOX SẢN PHẨM & TÌM KIẾM SẢN PHẨM ---
+const productOptions = ref<ISimpleProductOption[]>([]); 
+const fetching = ref(false); 
+let searchTimeout: NodeJS.Timeout | null = null; // Khai báo cho Debounce (Sản phẩm)
+
+// --- STATE CHO THƯƠNG HIỆU, LOẠI SP & CHẤT LIỆU ---
+const brandOptions = ref<ISelectOption[]>([]); // Dùng cho Thương hiệu
+const categoryOptions = ref<ISelectOption[]>([]); // Dùng cho loại
+const materialOptions = ref<ISelectOption[]>([]); // <--- THÊM MỚI
+
+const fetchingBrand = ref(false); // Loading cho Thương hiệu
+const fetchingCategory = ref(false); // Loading cho Loại sản phẩm
+const fetchingMaterial = ref(false); // <--- THÊM MỚI: Loading cho Chất liệu
+
+let brandSearchTimeout: NodeJS.Timeout | null = null; // Timer cho Thương hiệu
+let categorySearchTimeout: NodeJS.Timeout | null = null; // Timer cho Loại SP
+let materialSearchTimeout: NodeJS.Timeout | null = null; // <--- THÊM MỚI: Timer cho Chất liệu
+
+
+// --- LOGIC CHO COMBOBOX SẢN PHẨM & TÌM KIẾM API (Giữ nguyên) ---
+
+/** Tải dữ liệu danh sách sản phẩm (ID, Name) ban đầu */
+const loadProductOptions = async () => {
+    fetching.value = true;
+    try {
+        const data = await ProductService.fetchProductOptions(); 
+        productOptions.value = data;
+    } catch (error) {
+        console.error('Không thể tải danh sách sản phẩm:', error);
+        notification.error({ message: "Lỗi tải danh sách sản phẩm!" });
+    } finally {
+        fetching.value = false;
+    }
+};
+
+/** * Xử lý sự kiện @search trên a-select (Server-side search với Debounce) */
+const handleSearch = (value: string) => {
+    // 1. Luôn xóa timeout cũ để reset debounce
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // Đặt cờ loading ngay lập tức
+    fetching.value = true;
+    
+    // 2. Thiết lập Debounce
+    searchTimeout = setTimeout(() => {
+        // Nếu từ khóa rỗng sau 500ms, tải lại danh sách đầy đủ (nếu cần)
+        if (!value) {
+            loadProductOptions(); // Tải lại danh sách ban đầu (API /options)
+            return; // Dừng hàm tại đây
+        }
+        
+        // GỌI HÀM SERVICE TÌM KIẾM API
+        ProductService.searchProductOptions(value) 
+            .then((data: ISimpleProductOption[]) => {
+                productOptions.value = data;
+                notification.destroy(); 
+            })
+            .catch(error => {
+                console.error("Tìm kiếm sản phẩm thất bại (LỖI CATCH):", error);
+                notification.error({ message: "Tìm kiếm sản phẩm thất bại!" });
+            })
+            .finally(() => {
+                fetching.value = false;
+            });
+            
+    }, 500); // Debounce 500ms
+};
+
+/** Xử lý khi chọn một sản phẩm, tải chi tiết để điền vào form (handleProductSelect) */
+const handleProductSelect = (selectedProductId: number) => {
+    if (!selectedProductId) return;
+
+    ProductService.getChiTiet(selectedProductId)
+        .then((res: AxiosResponse<IProductTypeRes>) => {
+            const data = res.data;
+            
+            // Cập nhật các trường còn lại của formState
+            formState.name = data.tieuDe;
+            formState.desc = data.moTa;
+            formState.brand = data.thuongHieu.id;
+            formState.category = data.dmGiay.id;
+            formState.productNumber = data.maSP;
+            
+            // [ĐÃ SỬA] Cập nhật chatLieu và chatLieuId
+            formState.chatLieu = data.chatLieu;
+            
+            // Tìm ID tương ứng trong danh sách options (Nếu có) để điền vào Select
+            const selectedMaterial = materialOptions.value.find(o => o.label === data.chatLieu);
+            formState.chatLieuId = selectedMaterial ? selectedMaterial.value : undefined; 
+            
+            formState.noiSanXuat = data.noiSanXuat;
+            
+            // Cập nhật hình ảnh
+            if (data.anhChinh) {
+                productImages.mainImage = data.anhChinh;
+                formState.mainImage = data.anhChinh.id;
+            }
+            
+            notification.success({ message: `Đã tải thông tin chi tiết cho sản phẩm ID: ${selectedProductId}` });
+        })
+        .catch(error => {
+            console.error("Lỗi khi tải chi tiết sản phẩm:", error);
+            notification.error({ message: "Không thể tải chi tiết sản phẩm!" });
+        });
+};
+
+
+/** Xử lý click nút '+' bên cạnh ComboBox Sản phẩm */
+const onAddProduct = () => {
+    notification.info({ message: "Mở modal/chuyển trang để thêm sản phẩm mới." });
+};
+
+
+// --- LOGIC CHO OPTIONS TỔNG QUÁT (THƯƠNG HIỆU, LOẠI SẢN PHẨM, CHẤT LIỆU) ---
+
+/**
+ * Hàm chung xử lý Debounce và gọi API Options/Search cho Brand/Category/Material
+ * @param {'brand' | 'category' | 'material'} entityName - Tên entity
+ * @param {string} keyword - Từ khóa tìm kiếm
+ * @param {number} [debounceTime=300] - Thời gian debounce (ms)
+ */
+const handleOptionSearch = (
+    entityName: 'brand' | 'category' | 'material', // <--- ĐÃ SỬA
+    keyword: string, 
+    debounceTime = 300
+) => {
+    let timeoutRef: NodeJS.Timeout | null;
+    let optionsRef: typeof brandOptions; 
+    let fetchingRef: typeof fetchingBrand;
+    let serviceFunc: (keyword: string) => Promise<ISelectOption[]>; 
+
+    // 1. Phân biệt Service, State và Path
+    if (entityName === 'brand') {
+        timeoutRef = brandSearchTimeout;
+        optionsRef = brandOptions;
+        fetchingRef = fetchingBrand;
+        serviceFunc = BrandService.fetchBrandOptions; 
+    } else if (entityName === 'category') { 
+        timeoutRef = categorySearchTimeout;
+        optionsRef = categoryOptions;
+        fetchingRef = fetchingCategory;
+        serviceFunc = CategoryService.fetchCategoryOptions; 
+    } else { // 'material' <--- THÊM LOGIC CHO CHẤT LIỆU
+        timeoutRef = materialSearchTimeout;
+        optionsRef = materialOptions;
+        fetchingRef = fetchingMaterial;
+        serviceFunc = MaterialService.fetchMaterialOptions; 
+    }
+
+    // 2. Xóa Timeout cũ
+    if (timeoutRef) {
+        clearTimeout(timeoutRef);
+    }
+    
+    // Đặt cờ loading
+    fetchingRef.value = true;
+    
+    // 3. Logic gọi API
+    const callApi = () => {
+        serviceFunc(keyword)
+            .then((data: ISelectOption[]) => {
+                optionsRef.value = data;
+            })
+            .catch((error: any) => {
+                console.error(`Tìm kiếm ${entityName} thất bại:`, error);
+            })
+            .finally(() => {
+                fetchingRef.value = false;
+            });
+    };
+    
+    // 4. Thiết lập Debounce
+    const newTimer = setTimeout(callApi, debounceTime);
+    if (entityName === 'brand') {
+        brandSearchTimeout = newTimer;
+    } else if (entityName === 'category') {
+        categorySearchTimeout = newTimer;
+    } else { // 'material' <--- CẬP NHẬT TIMER MỚI
+        materialSearchTimeout = newTimer;
+    }
+};
+
+
+// --- VALIDATE & ACTIONS (Giữ nguyên) ---
 const newPriceValidator = (rule: any, value: string, callback: Function) => {
-  console.log("validating");
-  if (!value) return callback("Vui lòng không bỏ trống!");
-  if (productOrigin && formState.oldPrice > 0)
-    if (Number(formState.newPrice) >= Number(formState.oldPrice))
-      return callback("Giá mới phải nhỏ hơn giá cũ!");
-  return callback();
+    if (!value) return callback("Vui lòng không bỏ trống!");
+    if (productOrigin && formState.oldPrice > 0)
+        if (Number(formState.newPrice) >= Number(formState.oldPrice))
+            return callback("Giá mới phải nhỏ hơn giá cũ!");
+    return callback();
 };
 
 const onChangeOldPrice = () => {
-  formRef.value?.validateFields("newPrice");
+    formRef.value?.validateFields("newPrice");
 };
 
 const resetFormStep1 = () => {
-  formRef.value?.resetFields();
-  productImages.bgImages = [];
-  productImages.mainImage = undefined;
+    formRef.value?.resetFields();
+    productImages.bgImages = [];
+    productImages.mainImage = undefined;
 };
 
-// for selectbox
+
+// --- SELECTBOX OPTIONS KHÁC (Giữ nguyên) ---
 const filterOption = (input: string, option: any) => {
-  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0;
 };
 
-const categoryOptions = ref([]);
 
-const brandOptions = ref([]);
-
-// end selectbox
-
-// for images
+// --- IMAGE HANDLING (Giữ nguyên) ---
 const productImages = reactive<{
-  mainImage?: IFileModel;
-  bgImages: IFileModel[];
+    mainImage?: IFileModel;
+    bgImages: IFileModel[];
 }>({
-  mainImage: undefined,
-  bgImages: [],
+    mainImage: undefined,
+    bgImages: [],
 });
 
 let isUploadMainImg = false;
 const onChooseMainImage = () => {
-  if (isUploadMainImg) return;
+    if (isUploadMainImg) return;
 
-  const inputTag = document.createElement("input");
-  inputTag.accept = "image/png,image/jpg,image/jpeg";
-  inputTag.type = "file";
-  inputTag.multiple = false;
-  inputTag.addEventListener("change", ({ target }: any) => {
-    const { files } = target;
+    const inputTag = document.createElement("input");
+    inputTag.accept = "image/png,image/jpg,image/jpeg";
+    inputTag.type = "file";
+    inputTag.multiple = false;
+    inputTag.addEventListener("change", ({ target }: any) => {
+        const { files } = target;
 
-    const formData = new FormData();
-    formData.append("file", files[0]);
+        const formData = new FormData();
+        formData.append("file", files[0]);
 
-    isUploadMainImg = true;
-    fileService
-      .uploadFile(formData)
-      .then(({ data }: { data: IFileModel }) => {
-        console.log("upload ok; ", data);
-        productImages.mainImage = data;
-        formState.mainImage = productImages.mainImage.id;
-      })
-      .catch((err) => {
-        console.log("upload failed!", err);
-      })
-      .finally(() => (isUploadMainImg = false));
-  });
-  inputTag.click();
+        isUploadMainImg = true;
+        fileService
+            .uploadFile(formData)
+            .then(({ data }: { data: IFileModel }) => {
+                productImages.mainImage = data;
+                formState.mainImage = productImages.mainImage.id;
+                formRef.value?.validateFields('mainImage');
+            })
+            .catch((err) => {
+                console.log("upload failed!", err);
+            })
+            .finally(() => (isUploadMainImg = false));
+    });
+    inputTag.click();
 };
 const removeMainImg = () => {
-  productImages.mainImage = undefined;
-  formState.mainImage = undefined;
+    productImages.mainImage = undefined;
+    formState.mainImage = undefined;
+    formRef.value?.validateFields('mainImage');
 };
 
-let isUploadBgImg = false;
-const onChooseBgImage = () => {
-  if (productImages.bgImages.length === 6)
-    notification.warn({
-      message: "Tối đa chỉ được tảii lên 6 ảnhh!",
-    });
-  if (isUploadBgImg || productImages.bgImages.length === 6) return;
+// --- VARIANT LOGIC (Phần 3 & 4) (Giữ nguyên) ---
+const onAddColor = () => {
+    notification.info({ message: "Mở modal chọn/thêm màu sắc." });
+}
+const onAddSize = () => {
+    notification.info({ message: "Mở modal chọn/thêm kích cỡ." });
+}
+const onConfirmVariants = () => {
+    notification.info({ message: "Đang tạo bảng biến thể..." });
+}
 
-  const inputTag = document.createElement("input");
-  inputTag.accept = "image/png,image/jpg,image/jpeg";
-  inputTag.type = "file";
-  inputTag.multiple = true;
-  inputTag.addEventListener("change", ({ target }: any) => {
-    const { files } = target;
+// Logic cho các nút '+' bên cạnh các trường khác (Giữ nguyên)
+const onAddBrand = () => { notification.info({ message: "Mở modal/chuyển trang để thêm Thương hiệu." }); };
+const onAddCategory = () => { notification.info({ message: "Mở modal/chuyển trang để thêm loại." }); };
+const onAddChatLieu = () => { notification.info({ message: "Mở modal/chuyển trang để thêm Chất liệu." }); };
+const onAddProductNumber = () => { notification.info({ message: "Mở modal/chuyển trang để thêm Nhãn hiệu." }); };
+const onAddNoiSanXuat = () => { notification.info({ message: "Mở modal/chuyển trang để thêm Đế/Nơi sản xuất." }); };
 
-    if (productImages.bgImages.length + files.length > 6) {
-      notification.warn({
-        message: "Tối đa chỉ được tải lên 6 ảnhh!",
-      });
-      return;
+
+const variantColumns = [
+    { title: "#", dataIndex: "stt", key: "stt", width: '5%', align: 'center' },
+    { title: "Tên", dataIndex: "ten", key: "ten", width: '30%' },
+    { title: "Số lượng", dataIndex: "soLuong", key: "soLuong", width: '15%', align: 'center' },
+    { title: "Giá", dataIndex: "gia", key: "gia", width: '15%', align: 'center' },
+    { title: "Hành động", dataIndex: "operation", key: "operation", width: '10%', align: 'center' },
+    { title: "Hình ảnh", dataIndex: "hinhAnh", key: "hinhAnh", width: '25%', align: 'center' },
+];
+
+const variantData = ref([]); 
+
+// --- FORM SUBMIT LOGIC (ĐÃ SỬA CHAT LIEU) ---
+const onFinish = (values: any) => {
+    console.log("Success:", values);
+
+    // [ĐÃ SỬA]: Lấy tên Chất liệu từ Options nếu đã chọn ID
+    let finalChatLieu = formState.chatLieu;
+    if (formState.chatLieuId) {
+        const selectedOption = materialOptions.value.find(o => o.value === formState.chatLieuId);
+        if (selectedOption) {
+            finalChatLieu = selectedOption.label;
+        }
     }
 
-    isUploadBgImg = true;
+    const payload: IProductTypeReq = {
+        id: formState.id == 0 ? undefined : formState.id,
+        tieuDe: formState.name,
+        maSP: formState.productNumber,
+        dmGiay: {
+            id: formState.category as number,
+        },
+        thuongHieu: {
+            id: formState.brand as number,
+        },
+        hienThiWeb: formState.isWebDisplay,
+        gioiTinh: formState.sex,
+        giaMoi: formState.newPrice,
+        giaCu: formState.oldPrice,
+        anhChinh: formState.mainImage as number,
+        anhPhu: formState.bgImages || [] as number[],
+        moTa: formState.desc,
+        chatLieu: finalChatLieu, // <--- SỬ DỤNG GIÁ TRỊ TÊN MỚI
+        trongLuong: formState.trongLuong,
+        congNghe: formState.congNghe,
+        tinhNang: formState.tinhNang,
+        noiSanXuat: formState.noiSanXuat,
+    };
 
-    Promise.all(
-      [...files].map((file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        return fileService.uploadFile(formData).then((res) => res.data);
-      })
-    )
-      .then((res: IFileModel[]) => {
-        productImages.bgImages = [...productImages.bgImages, ...res];
-        formState.bgImages = productImages.bgImages.map((item) => item.id);
-      })
-      .catch((err) => {
-        console.log("upload failed!", err);
-      })
-      .finally(() => (isUploadBgImg = false));
-  });
-  inputTag.click();
-};
-const removeBgImg = (fileId: number) => {
-  productImages.bgImages = productImages.bgImages.filter(
-    (file) => file.id != fileId
-  );
-  formState.bgImages = productImages.bgImages.map((item) => item.id);
-};
+    console.log("product payload: ", payload);
+    ProductService.addStep1(payload)
+        .then((res: AxiosResponse<IProductTypeRes>) => {
+            console.log("product. step1 data: ", res.data);
+            notification.success({
+                message: "Lưu thành công!",
+            });
+            formState.id = res.data.id;
+            emits("updateProduct", {
+                id: res.data.id,
+                loaiBienThe: res.data.loaiBienTe,
+            });
 
-const onFinish = (values: any) => {
-  console.log("Success:", values);
-
-  const payload: IProductTypeReq = {
-    id: formState.id == 0 ? undefined : formState.id,
-    tieuDe: formState.name,
-    maSP: formState.productNumber,
-    dmGiay: {
-      id: formState.category as number,
-    },
-    thuongHieu: {
-      id: formState.brand as number,
-    },
-    hienThiWeb: formState.isWebDisplay,
-    gioiTinh: formState.sex,
-    giaMoi: formState.newPrice,
-    giaCu: formState.oldPrice,
-    anhChinh: formState.mainImage as number,
-    anhPhu: formState.bgImages as number[],
-    moTa: formState.desc,
-    chatLieu: formState.chatLieu,
-    trongLuong: formState.trongLuong,
-    congNghe: formState.congNghe,
-    tinhNang: formState.tinhNang,
-    noiSanXuat: formState.noiSanXuat,
-  };
-
-  console.log("product payload: ", payload);
-  ProductService.addStep1(payload)
-    .then((res: AxiosResponse<IProductTypeRes>) => {
-      console.log("product. step1 data: ", res.data);
-      notification.success({
-        message: "Lưu thành công!",
-      });
-      formState.id = res.data.id;
-      emits("updateProduct", {
-        id: res.data.id,
-        loaiBienThe: res.data.loaiBienThe,
-      });
-
-      emits("redirectStep", 1);
-    })
-    .catch((err) => {
-      console.log("product. step1 err: ", err);
-      notification.error({
-        message: "Lưu sản phẩm thất bại!",
-      });
-    });
+            emits("redirectStep", 1);
+        })
+        .catch((err) => {
+            console.log("product. step1 err: ", err);
+            notification.error({
+                message: "Lưu sản phẩm thất bại!",
+            });
+        });
 };
 
 const onFinishFailed = (errorInfo: any) => {
-  console.log("Failed:", errorInfo);
+    console.log("Failed:", errorInfo);
+    notification.error({
+        message: "Vui lòng kiểm tra lại các trường bị lỗi!",
+        description: "Các trường có dấu sao (*) là bắt buộc.",
+    });
 };
 
+// --- ON MOUNT (ĐÃ SỬA) ---
 onMounted(() => {
-  console.log("form ref: ");
+    // 1. Tải danh sách Sản phẩm cho ComboBox
+    loadProductOptions(); 
+    
+    // 2. [THAY THẾ] Logic tải Thương Hiệu, Loại SP & CHẤT LIỆU ban đầu
+    handleOptionSearch('brand', '', 0); 
+    handleOptionSearch('category', '', 0); 
+    handleOptionSearch('material', '', 0); // <--- THÊM MỚI
+    
+    // 3. Logic Edit sản phẩm (ĐÃ SỬA ÁNH XẠ CHẤT LIỆU)
+    if (route.params.id) {
+        ProductService.getChiTiet(Number(route.params.id))
+            .then((res: AxiosResponse<IProductTypeRes>) => {
+                // ... (Các trường khác giữ nguyên)
+                const pss: IProductType = {
+                    id: res.data.id,
+                    name: res.data.tieuDe,
+                    productNumber: res.data.maSP,
+                    category: res.data.dmGiay.id,
+                    brand: res.data.thuongHieu.id,
+                    sex: res.data.gioiTinh,
+                    newPrice: res.data.giaMoi,
+                    oldPrice: res.data.giaCu,
+                    mainImage: res.data.anhChinh.id,
+                    bgImages: res.data.anhPhu.map((i) => i.id),
+                    desc: res.data.moTa,
+                    isWebDisplay: res.data.hienThiWeb || true,
+                    loaiBienThe: res.data.loaiBienThe,
+                    chatLieu: res.data.chatLieu, // Vẫn là string
+                    trongLuong: res.data.trongLuong,
+                    congNghe: res.data.congNghe,
+                    tinhNang: res.data.tinhNang,
+                    noiSanXuat: res.data.noiSanXuat,
+                };
+                
+                // [THÊM MỚI] Đợi Options Chất liệu tải xong rồi mới ánh xạ giá trị Edit
+                // Tạm thời, ta chỉ ánh xạ pss.chatLieu vào formState.chatLieu 
+                // và sẽ cập nhật formState.chatLieuId sau khi options tải xong
+                
+                Object.keys(pss).forEach((k: string) => {
+                    // @ts-ignore
+                    formState[k] = pss[k];
+                });
+                
+                // CẬP NHẬT chatLieuId SAU KHI OPTIONS ĐÃ TẢI
+                // Do handleOptionSearch('material') là async, ta cần dùng watch hoặc đợi (nhưng đợi là không nên)
+                // Cách đơn giản nhất là gọi lại hàm mapping sau khi đã fill form
+                if (pss.chatLieu) {
+                     setTimeout(() => {
+                        const selectedMaterial = materialOptions.value.find(o => o.label === pss.chatLieu);
+                        formState.chatLieuId = selectedMaterial ? selectedMaterial.value : undefined;
+                     }, 300); // Đợi 1 chút cho options tải xong
+                }
 
-  CategoryService.filterCategory({
-    page: 0,
-    size: 999,
-  })
-    .then(({ data }: IAxiosRes<ICategoryType[]>) => {
-      console.log("product. category data: ", data);
-      categoryOptions.value = data.content.map((item) => ({
-        label: item.tenDanhMuc,
-        value: item.id,
-      }));
-    })
-    .catch((err) => {
-      console.log("product. get category failed: ", err);
-      notification.error({
-        message: "Lấy dữ liệu danh mục thất bại! Vui lòng thử lại.",
-      });
-    });
+                // ... (Các logic cập nhật khác)
+                formState.productId = res.data.id; 
+                productImages.bgImages = res.data.anhPhu;
+                productImages.mainImage = res.data.anhChinh;
 
-  BrandService.filterBrand({
-    page: 0,
-    size: 999,
-  })
-    .then(({ data }: IAxiosPageRes<IBrandType>) => {
-      console.log("product. brand data: ", data);
-      brandOptions.value = data.content.map((item) => ({
-        label: item.tenThuongHieu,
-        value: item.id,
-      }));
-    })
-    .catch((err) => {
-      console.log("product. get brand failed: ", err);
-      notification.error({
-        message: "Lấy dữ liệu thương hiệu thất bại! Vui lòng thử lại.",
-      });
-    });
-
-  console.log(route);
-  if (route.params.id) {
-    console.log("product. edit id: ", route.params.id);
-    ProductService.getChiTiet(Number(route.params.id))
-      .then((res: AxiosResponse<IProductTypeRes>) => {
-        console.log("product. get detail: ", res.data);
-
-        const pss: IProductType = {
-          id: res.data.id,
-          name: res.data.tieuDe,
-          productNumber: res.data.maSP,
-          category: res.data.dmGiay.id,
-          brand: res.data.thuongHieu.id,
-          sex: res.data.gioiTinh,
-          newPrice: res.data.giaMoi,
-          oldPrice: res.data.giaCu,
-          mainImage: res.data.anhChinh.id,
-          bgImages: res.data.anhPhu.map((i) => i.id),
-          desc: res.data.moTa,
-          isWebDisplay: res.data.hienThiWeb || true,
-          loaiBienThe: res.data.loaiBienThe,
-          chatLieu: res.data.chatLieu,
-          trongLuong: res.data.trongLuong,
-          congNghe: res.data.congNghe,
-          tinhNang: res.data.tinhNang,
-          noiSanXuat: res.data.noiSanXuat,
-        };
-        productImages.bgImages = res.data.anhPhu;
-        productImages.mainImage = res.data.anhChinh;
-
-        emits("updateProduct", {
-          id: res.data.id,
-          loaiBienThe: res.data.loaiBienThe,
-        });
-        Object.keys(pss).forEach((k: string) => {
-          // @ts-ignore
-          formState[k] = pss[k];
-        });
-      })
-      .catch((err) => {
-        console.log("product. get detail error: ", err);
-        notification.error({
-          message: "Lấy dữ liệu thất bại! Vui lòng thử lại.",
-        });
-      });
-  }
+                emits("updateProduct", {
+                    id: res.data.id,
+                    loaiBienThe: res.data.loaiBienThe,
+                });
+            });
+    }
 });
 </script>
+
+<style>
+/* Đảm bảo Ant Design Table header có màu cam #ff5733 */
+/* .variant-table .ant-table-thead > tr > th {
+  background-color: #ff5733 !important;
+  color: white !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+} */
+/* .variant-table .ant-table-thead > tr > th:last-child {
+  border-right: none;
+} */
+
+/* Ẩn tiêu đề cột mặc định để dùng header custom */
+.variant-table .ant-table-thead th {
+    padding: 0;
+}
+</style>
